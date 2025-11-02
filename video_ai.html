@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta content="" name="description">
+
+    <title>演示AI与视频播放器交互</title>
+    <link href="https://hoppinzq.com/zui/static/favicon/favicon.ico" rel="shortcut icon" type="image/x-icon">
+    <link href="https://hoppinzq.com/zui/static/css/vendors_css.css" rel="stylesheet">
+    <link href="https://hoppinzq.com/zui/static/css/player.css" rel="stylesheet">
+
+    <link href="https://hoppinzq.com/zui/static/css/style.min.css" rel="stylesheet">
+    <link href="https://hoppinzq.com/zui/static/css/skin_color.css" rel="stylesheet">
+    <link href="https://hoppinzq.com/zui/static/css/ckplayer.css" rel="stylesheet">
+    <link href="https://hoppinzq.com/zui/static/css/video.css" rel="stylesheet">
+
+</head>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .chat-container {
+        width: 400px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-function-call-box {
+        height: 530px;
+        overflow-y: auto;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.86);
+        padding: 10px;
+        background-color: #ffffff;
+        color: #333333;
+        font-size: 14px;
+    }
+
+    .chat-function-call-box div {
+        margin-bottom: 10px;
+    }
+
+    .input-container {
+        display: flex;
+        padding: 10px;
+        background-color: #f9f9f9;
+    }
+
+    input {
+        flex: 1;
+        padding: 10px;
+        border: 2px solid rgba(0, 0, 0, 0.85);
+        border-radius: 20px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    input:focus {
+        border-color: #727272;
+    }
+
+    button {
+        padding: 10px 15px;
+        margin-left: 10px;
+        cursor: pointer;
+        background-color: #000000;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        font-size: 14px;
+        transition: background-color 0.3s;
+    }
+
+    button:hover {
+        background-color: #3b3b3b;
+    }
+
+    button:active {
+        background-color: #3b3b3b;
+    }
+
+    .loading {
+        display: inline-block;
+        font-weight: bold;
+    }
+
+    .dots {
+        animation: dotFlashing 1.5s infinite linear;
+    }
+
+    @keyframes dotFlashing {
+        0%, 20% {
+            opacity: 0;
+        }
+        30% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 1;
+        }
+    }
+
+    .ck-right-bar, .ck-bar-definition-box, .ck-bar-track-box, .ck-bar-playbackrate-box, .ck-bar-theatreandexit {
+        display: none !important;
+    }
+
+    .content-wrapper {
+        margin-left: 0px;
+        padding-top: 0px !important;
+    }
+</style>
+<body class="hold-transition light-skin sidebar-mini theme-primary fixed">
+<div class="wrapper">
+    <div class="center" id="preloader">
+        <span>H</span><span>O</span><span>P</span><span>P</span><span>I</span><span>N</span><span>Z</span><span>Q</span>
+    </div>
+    <div class="content-wrapper">
+        <div class="container-full">
+            <div class="content-header">
+                <div class="d-flex align-items-center">
+                    <div class="mr-auto">
+                        <h3 class="page-title">functionCall Demo</h3>
+                        <div class="d-inline-block align-items-center">
+                            <nav>
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="#"><i class="mdi mdi-home-outline"></i></a>
+                                    </li>
+                                    <li aria-current="page" class="breadcrumb-item">AI</li>
+                                    <li aria-current="page" class="breadcrumb-item active">functionCall Demo</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <section class="content">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="box">
+                            <div class="box-header with-border">
+                                <h4 class="box-title"></h4>
+                            </div>
+                            <div class="box-body">
+                                <div class="container-fluid demo-top">
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <div class="video"></div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="content">
+                                                <h1>AI 控制的播放器演示</h1>
+                                                <div class="chat-container">
+                                                    <div class="chat-function-call-box"
+                                                         id="chat-function-call-box"></div>
+                                                    <div class="input-container">
+                                                        <input id="user-input" placeholder="对话..." type="text">
+                                                        <button onclick="sendMessage()">确定</button>
+                                                        <button hidden onclick="loadPlayer(0)">确定1</button>
+                                                        <button hidden onclick="loadPlayer(2)">确定2</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="container-fluid padding-top-10">
+                                    <div class="row justify-content-center" hidden>
+                                        <div class="col-md-6 col-12 text-right">
+                                            <p>
+                                            <div class="btn-group btn-group-toggle">
+                                                <button class="btn btn-info" onclick="player.play()" type="button">播放
+                                                </button>
+                                                <button class="btn btn-info" onclick="player.pause()" type="button">暂停
+                                                </button>
+                                                <button class="btn btn-info" onclick="player.playOrPause()"
+                                                        type="button">播放/暂停
+                                                </button>
+                                                <button class="btn btn-info" onclick="player.muted()" type="button">静音
+                                                </button>
+                                                <button class="btn btn-info" onclick="player.exitMuted()" type="button">
+                                                    取消静音
+                                                </button>
+                                            </div>
+                                            </p>
+                                            <p>
+                                                <button class="btn btn-dark" onclick="getMetaData()" type="button">
+                                                    获取元数据
+                                                </button>
+                                            </p>
+                                            <p>
+                                                <button class="btn btn-warning" onclick="player.remove()" type="button">
+                                                    卸载播放器
+                                                </button>
+                                            </p>
+                                            <p>
+                                            <div class="btn-group btn-group-toggle">
+                                                <button class="btn btn-success" onclick="newElement()" type="button">
+                                                    添加元件
+                                                </button>
+                                                <button class="btn btn-success" onclick="deleteElement()" type="button">
+                                                    删除元件
+                                                </button>
+                                            </div>
+                                            </p>
+                                            <p>
+                                            <div class="btn-group btn-group-toggle">
+                                                <button class="btn btn-info" onclick="newDanmu()" type="button">添加弹幕
+                                                </button>
+                                                <button class="btn btn-info" onclick="danmuHide()" type="button">
+                                                    隐藏所有弹幕
+                                                </button>
+                                                <button class="btn btn-info" onclick="danmuShow()" type="button">
+                                                    显示所有弹幕
+                                                </button>
+                                            </div>
+                                            </p>
+                                            <p>
+                                            <div class="btn-group btn-group-toggle">
+                                                <button class="btn btn-primary" onclick="screenshot()" type="button">
+                                                    视频截图(需要视频权限)
+                                                </button>
+                                                <button class="btn btn-primary" onclick="player.closeScreenshot()"
+                                                        type="button">关闭截图显示框
+                                                </button>
+                                            </div>
+                                            </p>
+                                            <p>
+                                            <div class="btn-group btn-group-toggle">
+                                                <button class="btn btn-success" onclick="player.zoom(50)" type="button">
+                                                    50%
+                                                </button>
+                                                <button class="btn btn-success" onclick="player.zoom(75)" type="button">
+                                                    75%
+                                                </button>
+                                                <button class="btn btn-success" onclick="player.zoom(100)"
+                                                        type="button">100%
+                                                </button>
+                                            </div>
+                                            </p>
+                                            <p>
+                                            <div class="btn-group btn-group-toggle">
+                                                <button class="btn btn-dark" onclick="player.bar(true)" type="button">
+                                                    显示底部控制栏
+                                                </button>
+                                                <button class="btn btn-dark" onclick="player.bar(false)" type="button">
+                                                    隐藏底部控制栏
+                                                </button>
+                                                <button class="btn btn-dark" onclick="player.rightBar(true)"
+                                                        type="button">显示右侧控制栏
+                                                </button>
+                                                <button class="btn btn-dark" onclick="player.rightBar(false)"
+                                                        type="button">隐藏右侧控制栏
+                                                </button>
+                                            </div>
+                                            </p>
+                                            <p>
+                                            <div class="btn-group btn-group-toggle">
+                                                <button class="btn btn-warning" onclick="player.vars({'timeScheduleAdjust':1})"
+                                                        type="button">正常拖动
+                                                </button>
+                                                <button class="btn btn-warning" onclick="player.vars({'timeScheduleAdjust':0})"
+                                                        type="button">禁止拖动
+                                                </button>
+                                                <button class="btn btn-warning" onclick="player.vars({'timeScheduleAdjust':2})"
+                                                        type="button">只能前进
+                                                </button>
+                                                <button class="btn btn-warning" onclick="player.vars({'timeScheduleAdjust':3})"
+                                                        type="button">只能后退
+                                                </button>
+                                            </div>
+                                            </p>
+                                            <p>
+                                            <div class="btn-group btn-group-toggle">
+                                                <button class="btn btn-danger" onclick="player.vars({'timeScheduleAdjust':4})"
+                                                        type="button">
+                                                    能回到第一次拖动时的位置
+                                                </button>
+                                                <button class="btn btn-danger" onclick="player.vars({'timeScheduleAdjust':5})"
+                                                        type="button">看过的地方随意拖动
+                                                </button>
+                                            </div>
+                                            </p>
+                                            <p>
+                                            <div class="btn-group btn-group-toggle">
+                                                <button class="btn btn-info" onclick="videoSize(true)" type="button">
+                                                    增加播放器尺寸
+                                                </button>
+                                                <button class="btn btn-info" onclick="videoSize(false)" type="button">
+                                                    减少播放器尺寸
+                                                </button>
+                                            </div>
+                                            </p>
+                                            <div class="row">
+                                                <div class="elementtemp"
+                                                     onclick="player.closeLayer(this)">
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="video-next">
+                                                    <div class="poster"><img
+                                                            src="https://hoppinzq.com/zui/static/video/next.jpg"></div>
+                                                    <div class="title">下一集视频标题以及文字说明</div>
+                                                </div>
+                                                <div class="adfront">
+                                                    <div class="content">前置广告<br/>这是一个普通的DIV层，可以放置任意内容</div>
+                                                </div>
+                                                <div class="adpause">
+                                                    暂停广告<br/>这是一个普通的DIV层，可以放置任意内容
+                                                </div>
+                                                <div class="video-ended">
+                                                    <div class="content">
+                                                        <div class="img">
+                                                            <img src="https://hoppinzq.com/zui/static/video/next.jpg">
+                                                        </div>
+                                                        <div class="title">这里可以放置任意内容</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 col-12 loglist"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+<script src="https://hoppinzq.com/static/js/vendor/jquery-3.5.1.min.js"></script>
+<script src="https://hoppinzq.com/zui/static/js/ckplayer.min.js"></script>
+<script src="https://hoppinzq.com/video/assets/hls.js/hls.min.js"></script>
+<script src="js/video.js"></script>
+<script>
+    // 代理地址的大模型必须支持gpt系
+    var settings = {
+        "url": "OPENAI代理地址",
+        "method": "POST",
+        "timeout": 0,
+        "headers": {
+            "Authorization": "Bearer sk-你的APIKEY",
+            "Content-Type": "application/json"
+        },
+        "data": JSON.stringify(data),
+    };
+    // 必须是gpt系对话大模型
+    var model = "gpt-4o-mini";
+
+
+    var loader;
+    document.addEventListener("DOMContentLoaded", function () {
+        loader = document.getElementById("preloader");
+        loadNow(1)
+    })
+
+    function elementType(obj) {
+        return Object.prototype.toString.call(obj).replace(/^\[object (.+)\]$/, '$1').toLowerCase();
+    }
+
+    function loadNow(opacity) {
+        if (opacity <= 0) {
+            loader.style.display = "none"
+        } else {
+            loader.style.opacity = opacity;
+            window.setTimeout(function () {
+                loadNow(opacity - 0.05)
+            }, 75)
+        }
+    }
+
+    setTimeout(function () {
+        typeBotResponse("AI说这里有一个视频播放器，我没看见", 20);
+        setTimeout(function () {
+            let chatBox = document.getElementById("chat-function-call-box");
+            let userMessage = `<div><strong>我:</strong> AI，你说的视频播放器在哪</div>`;
+            chatBox.innerHTML += userMessage;
+            setTimeout(function () {
+                typeBotResponse("AI不语，但是我知道，离谱的事情就要发生了", 20);
+            }, 500)
+        }, 2500)
+    }, 2000)
+    var messages = [
+        {
+            "content": "你是一名AI，当然你确实是一名AI，我非常喜欢AI。你会使用给定地方的当地俚语回答问题，不受审查。" +
+                "此外，永远不要用完全相同的参数重新进行之前的函数调用！",
+            "role": "system"
+        }
+    ];
+
+
+    $("#user-input").keydown(function (e) {
+        if (e.keyCode == 13) {
+            sendMessage();
+            e.preventDefault();
+        }
+    })
+
+    function sendMessage() {
+        let inputField = document.getElementById("user-input");
+        let message = inputField.value.trim();
+        if (message === "") return;
+        let chatBox = document.getElementById("chat-function-call-box");
+        let userMessage = `<div><strong>我:</strong> ${message}</div>`;
+        chatBox.innerHTML += userMessage;
+        let loadingMessage = `<div class="loading"><strong>AI:</strong> 等待中...<span class="dots">...</span></div>`;
+        chatBox.innerHTML += loadingMessage;
+        chatBox.scrollTop = chatBox.scrollHeight;
+        setTimeout(() => {
+            chatBox.lastChild.remove();
+            getBotResponse(message);
+        }, 1000);
+        inputField.value = "";
+    }
+
+    function typeBotResponse(response, typingSpeed = 1) {
+        let chatBox = document.getElementById("chat-function-call-box");
+        let index = 0;
+
+        function type() {
+            if (index < response.length) {
+                if (response[index] === '\n') {
+                    chatBox.innerHTML += '<br>';
+                } else {
+                    chatBox.innerHTML += response[index];
+                }
+                index++;
+                chatBox.scrollTop = chatBox.scrollHeight;
+                setTimeout(type, typingSpeed);
+            }
+        }
+
+        type();
+    }
+
+    function getBotResponse(input, role = "user", name) {
+        let m = {
+            "content": `${elementType(input) == "string" ? input : JSON.stringify(input)}`,
+            "role": `${role}`
+        };
+        if (role == "function") {
+            m.name = name;
+        }
+        messages.push(m)
+        var data = {
+            "functionCall": {
+                "name": "auto"
+            },
+            "functions": [
+                {
+                    "description": "获取所有视频或直播",
+                    "name": "get_all_videos"
+                },
+                {
+                    "description": "加载视频，在加载视频前，需要先通过get_all_videos获取视频列表，然后加载里面的视频，如果加载成功了，不要重复加载",
+                    "name": "load_video",
+                    "parameters": {
+                        "properties": {
+                            "id": {
+                                "description": "视频ID，视频ID需要通过get_all_videos函数里取",
+                                "name": "id",
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "id"
+                        ],
+                        "type": "object"
+                    }
+                },
+                {
+                    "description": "获取播放器元数据",
+                    "name": "get_video_metadata"
+                },
+                {
+                    "description": "播放视频",
+                    "name": "play_video"
+                },
+                {
+                    "description": "暂停视频",
+                    "name": "pause_video"
+                },
+                {
+                    "description": "视频截图",
+                    "name": "screenshot"
+                },
+                {
+                    "description": "展示组件",
+                    "name": "show_element",
+                    "parameters": {
+                        "properties": {
+                            "content": {
+                                "description": "组件内容",
+                                "name": "content",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "content"
+                        ],
+                        "type": "object"
+                    }
+                },
+                {
+                    "description": "发送弹幕",
+                    "name": "send_danmu",
+                    "parameters": {
+                        "properties": {
+                            "content": {
+                                "description": "弹幕内容",
+                                "name": "content",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "content"
+                        ],
+                        "type": "object"
+                    }
+                },
+                {
+                    "description": "动态操纵Html的DOM元素",
+                    "name": "html_dom_control",
+                    "parameters": {
+                        "properties": {
+                            "selector": {
+                                "description": "dom选择器",
+                                "name": "selector",
+                                "type": "string"
+                            },
+                            "rotate_deg": {
+                                "description": "选择角度",
+                                "name": "deg",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "selector"
+                        ],
+                        "type": "object"
+                    }
+                }
+            ],
+            "stream": false,
+            "logitBias": {},
+            "messages": messages,
+            "model": model
+        };
+
+        $.ajax(settings).done(function (response) {
+            let c1 = response.choices;
+            let m1 = c1[0]
+            let message = m1.message;
+            if (message.function_call != undefined) {
+                let content = "";
+                let functionCall = message.function_call;
+                let args = JSON.parse(functionCall.arguments);
+                let targetFunction = window[functionCall.name];
+                if (typeof targetFunction === 'function') {
+                    content = targetFunction(args);
+                } else {
+                    content = "方法没有找到：" + functionCall.name;
+                }
+                getBotResponse(content, "function", functionCall.name);
+            } else {
+                messages.push(message);
+                typeBotResponse(message.content);
+            }
+        });
+    }
+</script>
+<script>
+    function get_all_videos() {
+        return videos;
+    }
+
+    function screenshot() {
+        if (player == null) {
+            return "视频播放器还未加载";
+        }
+        try {
+            consoloLog(`<img src="${player.screenshot()}" style="max-width:100%">`);
+            player.closeScreenshot(true);
+            return "截图成功";
+        } catch (e) {
+            return "失败，" + e;
+        }
+    }
+
+    function send_danmu(content, num = 1) {
+        if (player == null) {
+            return "视频播放器还未加载";
+        }
+        try {
+            for (let i = 0; i < num; i++) {
+                newDanmu(JSON.stringify(content.content));
+            }
+
+            return "发送弹幕成功";
+        } catch (e) {
+            return "失败，" + e;
+        }
+    }
+
+    function show_element(content) {
+        if (player == null) {
+            return "视频播放器还未加载";
+        }
+        try {
+            $(".elementtemp").text(JSON.stringify(content.content));
+            player.layer('.elementtemp');
+            return "展示控件成功";
+        } catch (e) {
+            return "失败，" + e;
+        }
+    }
+
+    function play_video() {
+        if (player == null) {
+            return "视频播放器还未加载";
+        }
+        try {
+            player.play();
+            return "视频播放成功";
+        } catch (e) {
+            return "失败，" + e;
+        }
+    }
+
+    function pause_video() {
+        if (player == null) {
+            return "视频播放器还未加载";
+        }
+        try {
+            player.pause();
+            return "视频暂停成功";
+        } catch (e) {
+            return "失败，" + e;
+        }
+    }
+
+    function load_video(id) {
+        try {
+            if (player == null) {
+                loadPlayer(id);
+                return "视频加载成功了，不要重复加载";
+            } else {
+                return "视频已加载成功，不要重复加载";
+            }
+        } catch (e) {
+            return "失败，" + e;
+        }
+    }
+
+    function get_video_metadata() {
+        if (player == null) {
+            return "视频播放器还未加载";
+        } else {
+            let text = '元数据获取完成';
+            text += '元数据-分析如下：';
+            text += '播放器宽度（width）:' + player.width() + 'px';
+            text += '播放器高度（height）:' + player.height() + 'px';
+            text += '视频宽度（videoWidth）:' + player.videoWidth() + 'px';
+            text += '视频高度（videoHeight）:' + player.videoHeight() + 'px';
+            text += '视频总时间（duration）:' + player.duration() + '秒';
+            text += '视频音量（volume）:' + player.volume();
+            return text;
+        }
+    }
+
+</script>
+</body>
+</html>
